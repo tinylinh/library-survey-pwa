@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description"
+          content="Ứng dụng khảo sát đánh giá thư viện mới - Offline First PWA">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+
+    <title>Library Survey</title>
+</head>
+
+<body>
+
+<header class="app-header">
+    <div>
+        <h1>📚 Library Survey</h1>
+        <p>Đánh giá thư viện mới</p>
+    </div>
+
+    <div id="networkStatus" class="status online">
+        🟢 Online
+    </div>
+</header>
+
+<main>
+
+    <!-- HOME -->
+    <section id="homePage" class="page active">
+
+        <div class="hero-card">
+            <span class="hero-icon">📚</span>
+
+            <h2>Khảo sát thư viện mới</h2>
+
+            <p>
+                Khảo sát mức độ hiểu biết và trải nghiệm
+                của sinh viên đối với thư viện mới.
+            </p>
+
+            <button id="startBtn" class="primary-btn">
+                ＋ Bắt đầu phỏng vấn
+            </button>
+
+            <button id="historyBtn" class="secondary-btn">
+                📋 Lịch sử phỏng vấn
+            </button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <strong id="totalCount">0</strong>
+                <span>Tổng phiên</span>
+            </div>
+
+            <div class="stat-card">
+                <strong id="pendingCount">0</strong>
+                <span>Chờ đồng bộ</span>
+            </div>
+
+            <div class="stat-card">
+                <strong id="syncedCount">0</strong>
+                <span>Đã đồng bộ</span>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- INTERVIEW -->
+    <section id="surveyPage" class="page">
+
+        <div class="page-title">
+            <button class="backBtn">←</button>
+            <div>
+                <h2>Phiên phỏng vấn</h2>
+                <p id="sessionId"></p>
+            </div>
+        </div>
+
+        <form id="surveyForm">
+
+            <!-- INTERVIEWER -->
+            <div class="card">
+                <h3>👤 Người phỏng vấn</h3>
+
+                <label>
+                    Họ và tên
+                    <input
+                        id="interviewer"
+                        type="text"
+                        required
+                        placeholder="Nhập tên người phỏng vấn">
+                </label>
+
+                <label>
+                    Thời gian
+                    <input id="interviewTime" type="text" readonly>
+                </label>
+            </div>
+
+
+            <!-- LOCATION -->
+            <div class="card">
+                <div class="section-header">
+                    <h3>📍 Vị trí</h3>
+
+                    <button
+                        type="button"
+                        id="locationBtn"
+                        class="small-btn">
+                        Lấy vị trí
+                    </button>
+                </div>
+
+                <div id="locationResult" class="info-box">
+                    Chưa lấy vị trí
+                </div>
+            </div>
+
+
+            <!-- PERSONAL -->
+            <div class="card">
+                <h3>👨‍🎓 Thông tin người được phỏng vấn</h3>
+
+                <label>
+                    Ngành học
+                    <select id="major" required>
+                        <option value="">-- Chọn ngành --</option>
+                        <option>Công nghệ thông tin</option>
+                        <option>Kỹ thuật máy tính</option>
+                        <option>Hệ thống thông tin</option>
+                        <option>Kinh doanh</option>
+                        <option>Ngôn ngữ</option>
+                        <option>Khác</option>
+                    </select>
+                </label>
+
+                <label>
+                    Năm học
+                    <select id="year" required>
+                        <option value="">-- Chọn năm --</option>
+                        <option>Năm 1</option>
+                        <option>Năm 2</option>
+                        <option>Năm 3</option>
+                        <option>Năm 4</option>
+                        <option>Khác</option>
+                    </select>
+                </label>
+
+                <label>
+                    Giới tính
+                    <select id="gender" required>
+                        <option value="">-- Chọn --</option>
+                        <option>Nam</option>
+                        <option>Nữ</option>
+                        <option>Khác</option>
+                        <option>Không muốn trả lời</option>
+                    </select>
+                </label>
+
+                <label>
+                    Độ tuổi
+                    <select id="age" required>
+                        <option value="">-- Chọn --</option>
+                        <option>Dưới 18</option>
+                        <option>18–20</option>
+                        <option>21–23</option>
+                        <option>24–26</option>
+                        <option>Trên 26</option>
+                    </select>
+                </label>
+            </div>
+
+
+            <!-- KNOWLEDGE -->
+            <div class="card">
+                <h3>💡 Mức độ hiểu biết</h3>
+
+                <p class="question">
+                    Bạn đã biết về thư viện mới chưa?
+                </p>
+
+                <label class="radio-option">
+                    <input type="radio"
+                           name="awareness"
+                           value="Chưa biết"
+                           required>
+                    Chưa biết
+                </label>
+
+                <label class="radio-option">
+                    <input type="radio"
+                           name="awareness"
+                           value="Biết nhưng chưa tìm hiểu">
+                    Biết nhưng chưa tìm hiểu
+                </label>
+
+                <label class="radio-option">
+                    <input type="radio"
+                           name="awareness"
+                           value="Đã tìm hiểu">
+                    Đã tìm hiểu
+                </label>
+
+                <label class="radio-option">
+                    <input type="radio"
+                           name="awareness"
+                           value="Biết khá rõ">
+                    Biết khá rõ
+                </label>
+            </div>
+
+
+            <!-- FACILITY -->
+            <div class="card">
+                <h3>🏫 Đánh giá cơ sở vật chất</h3>
+
+                <p class="helper">
+                    1 = Rất không hài lòng · 5 = Rất hài lòng
+                </p>
+
+                <div class="rating-group">
+
+                    <div class="rating-row">
+                        <span>Không gian</span>
+                        <input type="number"
+                               id="space"
+                               min="1"
+                               max="5"
+                               required
+                               placeholder="1–5">
+                    </div>
+
+                    <div class="rating-row">
+                        <span>Ánh sáng</span>
+                        <input type="number"
+                               id="lighting"
+                               min="1"
+                               max="5"
+                               required
+                               placeholder="1–5">
+                    </div>
+
+                    <div class="rating-row">
+                        <span>Bàn ghế</span>
+                        <input type="number"
+                               id="furniture"
+                               min="1"
+                               max="5"
+                               required
+                               placeholder="1–5">
+                    </div>
+
+                    <div class="rating-row">
+                        <span>Wifi</span>
+                        <input type="number"
+                               id="wifi"
+                               min="1"
+                               max="5"
+                               required
+                               placeholder="1–5">
+                    </div>
+
+                    <div class="rating-row">
+                        <span>Vệ sinh</span>
+                        <input type="number"
+                               id="cleanliness"
+                               min="1"
+                               max="5"
+                               required
+                               placeholder="1–5">
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- USAGE -->
+            <div class="card">
+
+                <h3>📖 Trải nghiệm sử dụng</h3>
+
+                <label>
+                    Bạn đã sử dụng thư viện mới chưa?
+
+                    <select id="usage" required>
+                        <option value="">-- Chọn --</option>
+                        <option>Chưa</option>
+                        <option>1–2 lần</option>
+                        <option>3–5 lần</option>
+                        <option>Trên 5 lần</option>
+                    </select>
+                </label>
+
+                <p class="question">
+                    Bạn thường sử dụng thư viện để làm gì?
+                </p>
+
+                <label class="check-option">
+                    <input type="checkbox"
+                           name="purpose"
+                           value="Học tập">
+                    Học tập
+                </label>
+
+                <label class="check-option">
+                    <input type="checkbox"
+                           name="purpose"
+                           value="Đọc sách">
+                    Đọc sách
+                </label>
+
+                <label class="check-option">
+                    <input type="checkbox"
+                           name="purpose"
+                           value="Làm bài nhóm">
+                    Làm bài nhóm
+                </label>
+
+                <label class="check-option">
+                    <input type="checkbox"
+                           name="purpose"
+                           value="Nghiên cứu">
+                    Nghiên cứu
+                </label>
+
+                <label class="check-option">
+                    <input type="checkbox"
+                           name="purpose"
+                           value="Khác">
+                    Khác
+                </label>
+
+            </div>
+
+
+            <!-- OVERALL -->
+            <div class="card">
+
+                <h3>⭐ Đánh giá tổng thể</h3>
+
+                <label>
+                    Mức độ hài lòng
+
+                    <input
+                        id="overall"
+                        type="range"
+                        min="1"
+                        max="5"
+                        value="3">
+
+                    <div id="overallValue" class="big-rating">
+                        ⭐⭐⭐
+                    </div>
+                </label>
+
+                <label>
+                    Ý kiến / đề xuất
+
+                    <textarea
+                        id="comment"
+                        rows="5"
+                        placeholder="Bạn mong muốn thư viện cải thiện điều gì?"></textarea>
+                </label>
+
+            </div>
+
+
+            <!-- CAMERA -->
+            <div class="card">
+
+                <h3>📷 Ảnh hiện trường</h3>
+
+                <div class="camera-actions">
+                    <button
+                        type="button"
+                        id="openCameraBtn"
+                        class="small-btn">
+                        Mở camera
+                    </button>
+
+                    <button
+                        type="button"
+                        id="capturePhotoBtn"
+                        class="small-btn"
+                        hidden>
+                        Chụp ảnh
+                    </button>
+
+                    <button
+                        type="button"
+                        id="closeCameraBtn"
+                        class="small-btn"
+                        hidden>
+                        Tắt camera
+                    </button>
+                </div>
+
+                <video
+                    id="cameraPreview"
+                    class="camera-preview"
+                    autoplay
+                    playsinline
+                    muted
+                    hidden></video>
+
+                <input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    capture="environment">
+
+                <img
+                    id="photoPreview"
+                    class="photo-preview"
+                    alt="Ảnh hiện trường"
+                    hidden>
+
+            </div>
+
+
+            <button type="submit" class="primary-btn submit-btn">
+                💾 Hoàn thành phỏng vấn
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- HISTORY -->
+    <section id="historyPage" class="page">
+
+        <div class="page-title">
+            <button class="backBtn">←</button>
+            <div>
+                <h2>Lịch sử phỏng vấn</h2>
+                <p>Các phiên đã thực hiện trên thiết bị</p>
+            </div>
+        </div>
+
+        <div id="historyList"></div>
+
+    </section>
+
+</main>
+
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
