@@ -18,3 +18,13 @@ fs.mkdirSync(output, { recursive: true });
 for (const file of files) {
     fs.copyFileSync(path.join(root, file), path.join(output, file));
 }
+
+const iconOutput = path.join(output, "icons");
+fs.mkdirSync(iconOutput, { recursive: true });
+
+for (const file of ["icon-192.png", "icon-512.png"]) {
+    fs.copyFileSync(
+        path.join(root, "icons", file),
+        path.join(iconOutput, file)
+    );
+}
