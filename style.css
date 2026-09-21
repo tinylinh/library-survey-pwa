@@ -56,6 +56,38 @@ body {
     margin-top: 3px;
 }
 
+.auth-bar {
+    max-width: 760px;
+    margin: 12px auto 0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.auth-copy {
+    min-width: 0;
+}
+
+.auth-copy strong,
+.auth-copy span {
+    display: block;
+}
+
+.auth-copy strong {
+    font-size: 13px;
+}
+
+.auth-copy span,
+.auth-hint {
+    color: var(--muted);
+    font-size: 11px;
+}
+
 .status {
     padding: 7px 10px;
     border-radius: 999px;
@@ -121,6 +153,11 @@ main {
     border: none;
     cursor: pointer;
     font: inherit;
+}
+
+.small-btn[hidden],
+#googleSignInButton[hidden] {
+    display: none;
 }
 
 .primary-btn {

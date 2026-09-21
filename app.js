@@ -7,6 +7,8 @@ let currentLocation = null;
 let currentPhoto = null;
 let currentPhotoDataUrl = null;
 let cameraStream = null;
+let currentUser = null;
+let nativeCameraPhoto = false;
 
 
 /* =========================
@@ -15,6 +17,9 @@ let cameraStream = null;
 
 const GOOGLE_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbyrT3i-f2R48mRNGTmB6jUtwNtPperjLu9gSQZFb3Yjo5IQ8R-tHQDXNcQypkFDu3C1Rg/exec";
+
+const GOOGLE_CLIENT_ID =
+    window.LIBRARY_SURVEY_CONFIG?.googleClientId || "";
 
 
 /* =========================
@@ -342,6 +347,47 @@ document
 
 async function openCamera() {
 
+    const capacitorCamera =
+        window.CapacitorPlugins?.Camera ||
+        window.Capacitor?.Plugins?.Camera;
+
+    if (capacitorCamera) {
+
+        try {
+
+            const image = await capacitorCamera.getPhoto({
+                quality: 85,
+                allowEditing: false,
+                resultType: "base64",
+                source: "camera",
+                saveToGallery: true
+            });
+
+            currentPhotoDataUrl =
+                `data:image/${image.format || "jpeg"};base64,${image.base64String}`;
+
+            currentPhoto = null;
+            nativeCameraPhoto = true;
+
+            const preview = document.getElementById("photoPreview");
+            preview.src = currentPhotoDataUrl;
+            preview.hidden = false;
+            document.getElementById("downloadPhotoBtn").hidden = false;
+
+            showToast("Đã chụp và lưu ảnh vào thư viện điện thoại.");
+            return;
+
+        } catch (error) {
+
+            if (error?.message?.toLowerCase().includes("cancel")) {
+                return;
+            }
+
+            console.error("Capacitor camera error:", error);
+            showToast("Không mở được camera native. Đang thử camera trình duyệt.");
+        }
+    }
+
     if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
@@ -507,9 +553,26 @@ function capturePhoto() {
 
     closeCamera();
 
+    document.getElementById("downloadPhotoBtn").hidden = false;
+
     showToast(
         "Đã chụp ảnh hiện trường."
     );
+}
+
+
+function downloadCurrentPhoto() {
+
+    if (!currentPhotoDataUrl) {
+        showToast("Chưa có ảnh để lưu.");
+        return;
+    }
+
+    const link = document.createElement("a");
+    link.href = currentPhotoDataUrl;
+    link.download = `library-survey-${Date.now()}.jpg`;
+    link.click();
+    showToast("Đã gửi ảnh xuống thư mục tải về của điện thoại.");
 }
 
 
@@ -625,6 +688,15 @@ document
             const data = {
 
                 id: sessionId,
+
+                user: currentUser
+                    ? {
+                        id: currentUser.sub,
+                        email: currentUser.email,
+                        name: currentUser.name,
+                        picture: currentUser.picture
+                    }
+                    : null,
 
                 interviewer:
                     document.getElementById(
@@ -814,6 +886,7 @@ function resetForm() {
     currentLocation = null;
     currentPhoto = null;
     currentPhotoDataUrl = null;
+    nativeCameraPhoto = false;
 
     closeCamera();
 
@@ -830,6 +903,8 @@ function resetForm() {
         .removeAttribute(
             "src"
         );
+
+    document.getElementById("downloadPhotoBtn").hidden = true;
 
     document
         .getElementById(
@@ -1200,6 +1275,117 @@ function showPage(pageId) {
 
 
 /* =========================
+   GOOGLE AUTHENTICATION
+========================= */
+
+function decodeGoogleCredential(credential) {
+
+    const payload = credential.split(".")[1]
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+    return JSON.parse(
+        decodeURIComponent(
+            atob(payload)
+                .split("")
+                .map(character => `%${("00" + character.charCodeAt(0).toString(16)).slice(-2)}`)
+                .join("")
+        )
+    );
+}
+
+
+function handleGoogleCredential(response) {
+
+    currentUser = decodeGoogleCredential(response.credential);
+    localStorage.setItem("librarySurveyUser", JSON.stringify(currentUser));
+    renderAuthState();
+    showToast(`Đã đăng nhập: ${currentUser.email}`);
+}
+
+
+function renderAuthState() {
+
+    const title = document.getElementById("authTitle");
+    const email = document.getElementById("authEmail");
+    const signOutButton = document.getElementById("signOutBtn");
+    const googleButton = document.getElementById("googleSignInButton");
+
+    if (currentUser) {
+        title.textContent = currentUser.name || "Đã đăng nhập";
+        email.textContent = currentUser.email;
+        signOutButton.hidden = false;
+        googleButton.hidden = true;
+        return;
+    }
+
+    title.textContent = "Đăng nhập để bắt đầu";
+    email.textContent = "Dữ liệu sẽ được gắn với tài khoản Google của bạn.";
+    signOutButton.hidden = true;
+    googleButton.hidden = false;
+}
+
+
+function initializeGoogleAuth() {
+
+    const googleButton = document.getElementById("googleSignInButton");
+    const storedUser = localStorage.getItem("librarySurveyUser");
+
+    if (storedUser) {
+        try {
+            currentUser = JSON.parse(storedUser);
+        } catch (error) {
+            localStorage.removeItem("librarySurveyUser");
+        }
+    }
+
+    renderAuthState();
+
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("YOUR_GOOGLE")) {
+        googleButton.innerHTML = "<span class=\"auth-hint\">Cấu hình Google Client ID trong config.js</span>";
+        return;
+    }
+
+    const renderGoogleButton = () => {
+        if (!window.google?.accounts?.id) {
+            setTimeout(renderGoogleButton, 250);
+            return;
+        }
+
+        window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredential,
+            auto_select: false
+        });
+
+        window.google.accounts.id.renderButton(googleButton, {
+            theme: "outline",
+            size: "large",
+            text: "signin_with",
+            shape: "rectangular",
+            width: 220
+        });
+    };
+
+    renderGoogleButton();
+}
+
+
+function signOut() {
+
+    currentUser = null;
+    localStorage.removeItem("librarySurveyUser");
+
+    if (window.google?.accounts?.id) {
+        window.google.accounts.id.disableAutoSelect();
+    }
+
+    renderAuthState();
+    showToast("Đã đăng xuất tài khoản Google.");
+}
+
+
+/* =========================
    START INTERVIEW
 ========================= */
 
@@ -1208,6 +1394,11 @@ document
     .addEventListener(
         "click",
         () => {
+
+            if (!currentUser) {
+                showToast("Vui lòng đăng nhập Google trước khi bắt đầu.");
+                return;
+            }
 
             const id =
                 createSessionId();
@@ -1314,6 +1505,22 @@ document
     );
 
 
+document
+    .getElementById("downloadPhotoBtn")
+    .addEventListener(
+        "click",
+        downloadCurrentPhoto
+    );
+
+
+document
+    .getElementById("signOutBtn")
+    .addEventListener(
+        "click",
+        signOut
+    );
+
+
 /* =========================
    RATING
 ========================= */
@@ -1373,6 +1580,8 @@ async function registerServiceWorker() {
 ========================= */
 
 async function init() {
+
+    initializeGoogleAuth();
 
     await openDB();
 

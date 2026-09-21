@@ -1,10 +1,12 @@
-const CACHE_NAME = "library-survey-v3";
+const CACHE_NAME = "library-survey-v4";
 
 const APP_SHELL = [
     "./",
     "./index.html",
     "./style.css",
     "./app.js",
+    "./config.js",
+    "./native-plugins.bundle.js",
     "./manifest.json"
 ];
 

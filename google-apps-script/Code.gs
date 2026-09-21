@@ -24,6 +24,9 @@ function getSheet() {
 
         sheet.appendRow([
             "id",
+            "userId",
+            "userEmail",
+            "userName",
             "interviewTime",
             "interviewer",
             "major",
@@ -47,6 +50,20 @@ function getSheet() {
             "createdAt",
             "syncedAt"
         ]);
+    } else {
+
+        const headers = sheet
+            .getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
+            .getValues()[0];
+
+        if (!headers.includes("userEmail")) {
+            sheet.insertColumnsAfter(1, 3);
+            sheet.getRange(1, 2, 1, 3).setValues([[
+                "userId",
+                "userEmail",
+                "userName"
+            ]]);
+        }
     }
 
     return sheet;
@@ -202,6 +219,10 @@ function doPost(e) {
             data.respondent || {};
 
 
+        const user =
+            data.user || {};
+
+
         /*
          * Answers
          */
@@ -217,6 +238,12 @@ function doPost(e) {
         sheet.appendRow([
 
             data.id || "",
+
+            user.id || "",
+
+            user.email || "",
+
+            user.name || "",
 
             data.interviewTime || "",
 

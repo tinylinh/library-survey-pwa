@@ -1,0 +1,28 @@
+{
+    "name": "library-survey-pwa",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Offline-first Library Survey PWA wrapped with Capacitor",
+    "scripts": {
+        "build:native": "esbuild native-plugins.js --bundle --format=iife --outfile=native-plugins.bundle.js",
+        "prepare:web": "node prepare-web.js",
+        "cap:sync": "npm run build:native && npm run prepare:web && npx cap sync",
+        "cap:add:ios": "npm run build:native && npm run prepare:web && npx cap add ios",
+        "cap:add:android": "npm run build:native && npm run prepare:web && npx cap add android",
+        "cap:ios": "npx cap open ios",
+        "cap:android": "npx cap open android"
+    },
+    "dependencies": {
+        "@capacitor/android": "^7.4.0",
+        "@capacitor/camera": "^7.0.1",
+        "@capacitor/core": "^7.4.0",
+        "@capacitor/geolocation": "^7.1.0",
+        "@capacitor/ios": "^7.4.0",
+        "@capacitor/local-notifications": "^7.0.1",
+        "@capacitor/network": "^7.0.1"
+    },
+    "devDependencies": {
+        "@capacitor/cli": "^7.4.0",
+        "esbuild": "^0.25.0"
+    }
+}

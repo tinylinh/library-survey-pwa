@@ -1,0 +1,9 @@
+{
+    "appId": "vn.edu.librarysurvey.app",
+    "appName": "Library Survey",
+    "webDir": "www",
+    "bundledWebRuntime": false,
+    "server": {
+        "androidScheme": "https"
+    }
+}
