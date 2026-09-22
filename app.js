@@ -16,7 +16,7 @@ let nativeCameraPhoto = false;
 ========================= */
 
 const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbyrT3i-f2R48mRNGTmB6jUtwNtPperjLu9gSQZFb3Yjo5IQ8R-tHQDXNcQypkFDu3C1Rg/exec";
+    "https://script.google.com/macros/s/AKfycbwW1PgoJj6xiGeajUuz6fXO1o3DsPQxPnJ5qFBi9jUWNWCdjK1niustZ7W7l77i4Ik5-w/exec";
 
 const GOOGLE_CLIENT_ID =
     window.LIBRARY_SURVEY_CONFIG?.googleClientId || "";
@@ -857,7 +857,9 @@ document
 
                 resetForm();
 
-                showPage("homePage");
+                await renderAnalytics();
+
+                showPage("analyticsPage");
 
                 updateStats();
 
@@ -1239,6 +1241,242 @@ async function updateStats() {
 
 
 /* =========================
+   ANALYTICS
+========================= */
+
+function countValues(items, getValues) {
+
+    const counts = {};
+
+    items.forEach(item => {
+
+        const values = getValues(item) || [];
+
+        values.forEach(value => {
+
+            if (!value) return;
+
+            counts[value] = (counts[value] || 0) + 1;
+        });
+    });
+
+    return counts;
+}
+
+
+function renderBarChart(elementId, counts, total) {
+
+    const container = document.getElementById(elementId);
+    const entries = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1]);
+
+    if (entries.length === 0) {
+        container.innerHTML = "<p class=\"chart-muted\">Chưa có câu trả lời.</p>";
+        return;
+    }
+
+    container.innerHTML = entries.map(([label, value], index) => {
+
+        const percentage = Math.round((value / total) * 100);
+        const width = Math.max(percentage, 4);
+
+        return `
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>${label}</span>
+                    <strong>${percentage}%</strong>
+                </div>
+                <div class="bar-track">
+                    <span class="bar-fill bar-fill-${index % 4}" style="width: ${width}%"></span>
+                </div>
+                <small>${value} lựa chọn</small>
+            </div>
+        `;
+    }).join("");
+}
+
+
+function renderRatingChart(items) {
+
+    const fields = [
+        ["Không gian", "space"],
+        ["Ánh sáng", "lighting"],
+        ["Bàn ghế", "furniture"],
+        ["Wifi", "wifi"],
+        ["Vệ sinh", "cleanliness"],
+        ["Hài lòng chung", "overall"]
+    ];
+
+    document.getElementById("ratingChart").innerHTML = fields.map(([label, field]) => {
+
+        const values = items
+            .map(item => Number(item.answers?.[field]))
+            .filter(value => value > 0);
+
+        const average = values.length
+            ? values.reduce((sum, value) => sum + value, 0) / values.length
+            : 0;
+
+        const percentage = Math.round((average / 5) * 100);
+
+        return `
+            <div class="rating-bar-row">
+                <span>${label}</span>
+                <div class="rating-track">
+                    <span style="width: ${percentage}%"></span>
+                </div>
+                <strong>${average.toFixed(1)}</strong>
+            </div>
+        `;
+    }).join("");
+}
+
+
+function renderRatingSummary(ratings) {
+
+    const fields = [
+        "Không gian",
+        "Ánh sáng",
+        "Bàn ghế",
+        "Wifi",
+        "Vệ sinh",
+        "Hài lòng chung"
+    ];
+
+    document.getElementById("ratingChart").innerHTML = fields.map(label => {
+
+        const average = Number(ratings[label] || 0);
+        const percentage = Math.round((average / 5) * 100);
+
+        return `
+            <div class="rating-bar-row">
+                <span>${label}</span>
+                <div class="rating-track">
+                    <span style="width: ${percentage}%"></span>
+                </div>
+                <strong>${average.toFixed(1)}</strong>
+            </div>
+        `;
+    }).join("");
+}
+
+
+function renderAnalyticsData(analytics, sourceLabel) {
+
+    const total = Number(analytics.total || 0);
+    const empty = document.getElementById("analyticsEmpty");
+    const content = document.getElementById("analyticsContent");
+
+    document.getElementById("analyticsTotal").textContent = total;
+
+    if (total === 0) {
+        empty.hidden = false;
+        content.hidden = true;
+        document.getElementById("analyticsSubtitle").textContent =
+            `Chưa có dữ liệu khảo sát (${sourceLabel}).`;
+        return;
+    }
+
+    empty.hidden = true;
+    content.hidden = false;
+    document.getElementById("analyticsSubtitle").textContent =
+        `${sourceLabel} · cập nhật ${new Date().toLocaleTimeString("vi-VN")}.`;
+
+    const overallAverage = Number(analytics.ratings?.["Hài lòng chung"] || 0);
+    const roundedStars = Math.max(0, Math.min(5, Math.round(overallAverage)));
+
+    document.getElementById("analyticsAverage").textContent =
+        `${overallAverage.toFixed(1)}/5`;
+    document.getElementById("analyticsStars").textContent =
+        "★".repeat(roundedStars) + "☆".repeat(5 - roundedStars);
+
+    renderBarChart("awarenessChart", analytics.awareness || {}, total);
+    renderBarChart("purposeChart", analytics.purpose || {}, total);
+    renderBarChart("majorChart", analytics.major || {}, total);
+    renderRatingSummary(analytics.ratings || {});
+}
+
+
+async function fetchRemoteAnalytics() {
+
+    if (!navigator.onLine || !GOOGLE_SCRIPT_URL) {
+        throw new Error("Analytics API unavailable offline.");
+    }
+
+    const response = await fetch(
+        `${GOOGLE_SCRIPT_URL}?action=analytics&_=${Date.now()}`,
+        {
+            method: "GET",
+            cache: "no-store"
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error(`Analytics request failed: ${response.status}`);
+    }
+
+    const analytics = await response.json();
+
+    if (!analytics.success) {
+        throw new Error(analytics.error || "Analytics API returned success=false.");
+    }
+
+    return analytics;
+}
+
+
+async function renderAnalytics() {
+
+    const items = await getAllInterviews();
+
+    try {
+
+        const remoteAnalytics = await fetchRemoteAnalytics();
+        renderAnalyticsData(remoteAnalytics, "Dữ liệu realtime từ Google Sheet");
+
+    } catch (error) {
+
+        console.warn("Remote analytics unavailable, using local data:", error);
+
+        const total = items.length;
+        const overallValues = items
+            .map(item => Number(item.answers?.overall))
+            .filter(value => value > 0);
+        const overallAverage = overallValues.length
+            ? overallValues.reduce((sum, value) => sum + value, 0) / overallValues.length
+            : 0;
+
+        renderAnalyticsData({
+            total,
+            awareness: countValues(items, item => [item.answers?.awareness]),
+            purpose: countValues(items, item => item.answers?.purpose),
+            major: countValues(items, item => [item.respondent?.major]),
+            ratings: {
+                "Không gian": averageField(items, "space"),
+                "Ánh sáng": averageField(items, "lighting"),
+                "Bàn ghế": averageField(items, "furniture"),
+                "Wifi": averageField(items, "wifi"),
+                "Vệ sinh": averageField(items, "cleanliness"),
+                "Hài lòng chung": overallAverage
+            }
+        }, "Dữ liệu trên thiết bị · offline");
+    }
+}
+
+
+function averageField(items, field) {
+
+    const values = items
+        .map(item => Number(item.answers?.[field]))
+        .filter(value => value > 0);
+
+    return values.length
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : 0;
+}
+
+
+/* =========================
    PAGE NAVIGATION
 ========================= */
 
@@ -1258,6 +1496,15 @@ function showPage(pageId) {
         .getElementById(pageId)
         .classList.add("active");
 
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(item => {
+            item.classList.toggle(
+                "active",
+                item.dataset.page === pageId
+            );
+        });
+
 
     window.scrollTo(
         {
@@ -1270,6 +1517,11 @@ function showPage(pageId) {
     if (pageId === "historyPage") {
 
         loadHistory();
+    }
+
+    if (pageId === "analyticsPage") {
+
+        renderAnalytics();
     }
 }
 
@@ -1445,6 +1697,54 @@ document
             showPage(
                 "historyPage"
             );
+        }
+    );
+
+
+document
+    .querySelectorAll(".nav-item")
+    .forEach(button => {
+        button.addEventListener(
+            "click",
+            () => {
+                const pageId = button.dataset.page;
+
+                if (pageId === "surveyPage" && !currentUser) {
+                    showToast("Vui lòng đăng nhập Google trước khi bắt đầu.");
+                    return;
+                }
+
+                if (pageId === "surveyPage") {
+                    document.getElementById("startBtn").click();
+                    return;
+                }
+
+                showPage(pageId);
+            }
+        );
+    });
+
+
+document
+    .getElementById("emptyAnalyticsStartBtn")
+    .addEventListener(
+        "click",
+        () => document.getElementById("startBtn").click()
+    );
+
+
+document
+    .getElementById("refreshAnalyticsBtn")
+    .addEventListener(
+        "click",
+        async event => {
+            event.currentTarget.disabled = true;
+            event.currentTarget.textContent = "Đang tải...";
+
+            await renderAnalytics();
+
+            event.currentTarget.disabled = false;
+            event.currentTarget.textContent = "Làm mới";
         }
     );
 

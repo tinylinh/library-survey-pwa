@@ -469,7 +469,109 @@
 
     </section>
 
+
+    <!-- ANALYTICS -->
+    <section id="analyticsPage" class="page">
+
+        <div class="page-title analytics-heading">
+            <div>
+                <span class="eyebrow">Tổng hợp dữ liệu</span>
+                <h2>Toàn cảnh khảo sát</h2>
+                <p id="analyticsSubtitle">Chưa có dữ liệu khảo sát.</p>
+            </div>
+            <div class="analytics-actions">
+                <span class="analytics-mark">✦</span>
+                <button id="refreshAnalyticsBtn" class="small-btn" type="button">Làm mới</button>
+            </div>
+        </div>
+
+        <div class="analytics-summary">
+            <div class="summary-card summary-card-accent">
+                <span class="summary-label">Tổng phiên</span>
+                <strong id="analyticsTotal">0</strong>
+                <span class="summary-note">toàn hệ thống</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Hài lòng trung bình</span>
+                <strong id="analyticsAverage">0.0/5</strong>
+                <span id="analyticsStars" class="summary-stars">☆☆☆☆☆</span>
+            </div>
+        </div>
+
+        <div id="analyticsEmpty" class="card analytics-empty">
+            <div class="empty-icon">◌</div>
+            <h3>Chưa có dữ liệu để phân tích</h3>
+            <p>Hoàn thành một phiên khảo sát, các kết quả sẽ xuất hiện ở đây.</p>
+            <button id="emptyAnalyticsStartBtn" class="primary-btn" type="button">Bắt đầu khảo sát</button>
+        </div>
+
+        <div id="analyticsContent" class="analytics-grid" hidden>
+            <div class="chart-card chart-card-wide">
+                <div class="chart-heading">
+                    <div>
+                        <span class="eyebrow">Câu hỏi nhận biết</span>
+                        <h3>Mức độ hiểu biết về thư viện</h3>
+                    </div>
+                    <span class="chart-icon chart-icon-blue">◎</span>
+                </div>
+                <div id="awarenessChart" class="bar-chart"></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <div>
+                        <span class="eyebrow">Trải nghiệm</span>
+                        <h3>Mục đích sử dụng</h3>
+                    </div>
+                    <span class="chart-icon chart-icon-coral">↗</span>
+                </div>
+                <div id="purposeChart" class="bar-chart"></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <div>
+                        <span class="eyebrow">Đối tượng</span>
+                        <h3>Ngành học</h3>
+                    </div>
+                    <span class="chart-icon chart-icon-yellow">⌁</span>
+                </div>
+                <div id="majorChart" class="bar-chart"></div>
+            </div>
+
+            <div class="chart-card chart-card-wide">
+                <div class="chart-heading">
+                    <div>
+                        <span class="eyebrow">Cơ sở vật chất</span>
+                        <h3>Điểm đánh giá trung bình</h3>
+                    </div>
+                    <span class="chart-icon chart-icon-teal">★</span>
+                </div>
+                <div id="ratingChart" class="rating-chart"></div>
+            </div>
+        </div>
+    </section>
+
 </main>
+
+<nav class="bottom-nav" aria-label="Điều hướng chính">
+    <button class="nav-item active" data-page="homePage" type="button">
+        <span class="nav-icon">⌂</span>
+        <span>Trang chủ</span>
+    </button>
+    <button class="nav-item" data-page="surveyPage" type="button">
+        <span class="nav-icon">＋</span>
+        <span>Khảo sát</span>
+    </button>
+    <button class="nav-item" data-page="analyticsPage" type="button">
+        <span class="nav-icon">◔</span>
+        <span>Phân tích</span>
+    </button>
+    <button class="nav-item" data-page="historyPage" type="button">
+        <span class="nav-icon">▤</span>
+        <span>Lịch sử</span>
+    </button>
+</nav>
 
 
 <!-- TOAST -->

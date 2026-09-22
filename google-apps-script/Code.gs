@@ -88,7 +88,15 @@ function getDriveFolder() {
 }
 
 
-function doGet() {
+function doGet(e) {
+
+    if (
+        e &&
+        e.parameter &&
+        e.parameter.action === "analytics"
+    ) {
+        return jsonResponse(getAnalytics());
+    }
 
     return ContentService
         .createTextOutput(
@@ -101,6 +109,92 @@ function doGet() {
         .setMimeType(
             ContentService.MimeType.JSON
         );
+}
+
+
+function getAnalytics() {
+
+    const sheet = getSheet();
+    const values = sheet.getDataRange().getValues();
+
+    if (values.length < 2) {
+        return {
+            success: true,
+            total: 0,
+            awareness: {},
+            purpose: {},
+            major: {},
+            ratings: {},
+            updatedAt: new Date().toISOString()
+        };
+    }
+
+    const headers = values[0].map(header => String(header).trim());
+    const columns = {};
+
+    headers.forEach((header, index) => {
+        columns[header] = index;
+    });
+
+    const rows = values.slice(1).filter(row => row[columns.id]);
+    const awareness = {};
+    const purpose = {};
+    const major = {};
+    const ratingFields = [
+        ["space", "Không gian"],
+        ["lighting", "Ánh sáng"],
+        ["furniture", "Bàn ghế"],
+        ["wifi", "Wifi"],
+        ["cleanliness", "Vệ sinh"],
+        ["overall", "Hài lòng chung"]
+    ];
+    const ratingTotals = {};
+    const ratingCounts = {};
+
+    function addCount(target, value) {
+        if (!value) return;
+        target[value] = (target[value] || 0) + 1;
+    }
+
+    rows.forEach(row => {
+
+        addCount(awareness, row[columns.awareness]);
+        addCount(major, row[columns.major]);
+
+        String(row[columns.purpose] || "")
+            .split(",")
+            .map(value => value.trim())
+            .filter(Boolean)
+            .forEach(value => addCount(purpose, value));
+
+        ratingFields.forEach(([field, label]) => {
+
+            const value = Number(row[columns[field]]);
+
+            if (!value) return;
+
+            ratingTotals[label] = (ratingTotals[label] || 0) + value;
+            ratingCounts[label] = (ratingCounts[label] || 0) + 1;
+        });
+    });
+
+    const ratings = {};
+
+    ratingFields.forEach(([, label]) => {
+        ratings[label] = ratingCounts[label]
+            ? Number((ratingTotals[label] / ratingCounts[label]).toFixed(2))
+            : 0;
+    });
+
+    return {
+        success: true,
+        total: rows.length,
+        awareness,
+        purpose,
+        major,
+        ratings,
+        updatedAt: new Date().toISOString()
+    };
 }
 
 
